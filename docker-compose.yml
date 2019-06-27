@@ -15,18 +15,33 @@ services:
   redis:
     image: "redis:5.0"
 
+  celery:
+    build: ./celery
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
+    depends_on:
+      - redis
+    links:
+      - redis
+    restart: "always"
+
   flask:
-    build: .
+    build: ./service
     ports:
       - "6000:6000"
     environment:
+      - CELERY_BROKER_URL=redis://redis:6379
+      - CELERY_RESULT_BACKEND=redis://redis:6379
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=db
     depends_on:
+      - redis
       - postgres
+      - celery
     links:
       - redis
       - postgres
